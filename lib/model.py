@@ -125,7 +125,8 @@ def test_rel_net(net, args):
         anno_img = anno[step]
         gt_boxes = anno_img['boxes'].astype(np.float32)
         gt_cls = np.array(anno_img['classes']).astype(np.float32)
-        pos_num_img, loc_num_img = eval_obj_img(gt_boxes, gt_cls, ori_bboxes, obj_pred.cpu().numpy(), gt_thr=0.5)
+        # pos_num_img, loc_num_img = eval_obj_img(gt_boxes, gt_cls, ori_bboxes, obj_pred.cpu().numpy(), gt_thr=0.5)
+        pos_num_img, loc_num_img = eval_obj_img(gt_boxes, gt_cls, ori_bboxes, classes, gt_thr=0.5)
         gt_num += gt_boxes.shape[0]
         pos_num += pos_num_img
         loc_num += loc_num_img

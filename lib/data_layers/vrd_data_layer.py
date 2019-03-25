@@ -159,6 +159,7 @@ class VrdDataLayer(object):
                 self._cur = 0
             return None
         im_path = anno_img['img_path']
+        print(im_path)
 
         if im_path[-3:] == 'png':
             im_path = im_path[:-3]+'jpg'
