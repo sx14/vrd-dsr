@@ -50,7 +50,7 @@ class vrd_module():
             checkpoint = torch.load(model_path)
             self.net.load_state_dict(checkpoint['state_dict'])        
         else:
-            print "=> no model found at '{}'".format(args.resume)
+            print "=> no model found at '{}'".format(model_path)
         
     def relation_im(self, im_path, res):
         boxes_img = res['box']
@@ -164,5 +164,5 @@ def vrd_demo():
     print vrd_res
 
 if __name__ == '__main__':
-    vrd_demo() 
+    vrd_demo()
     #from IPython import embed; embed()

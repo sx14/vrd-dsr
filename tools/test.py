@@ -25,10 +25,10 @@ def parse_args():
                         default=None, type=str)
     parser.add_argument('--dataset', dest='ds_name',
                         help='dataset name',
-                        default=None, type=str)    
+                        default='vrd', type=str)
     parser.add_argument('--model_type', dest='model_type',
                         help='model type: RANK_IM_ALL, RANK_IM, LOC',
-                        default=None, type=str)
+                        default='RANK_IM', type=str)
     parser.add_argument('--no_so', dest='use_so', action='store_false')
     parser.set_defaults(use_so=True)
     parser.add_argument('--no_obj', dest='use_obj', action='store_false')
@@ -44,12 +44,12 @@ def parse_args():
                         metavar='LR', help='initial learning rate')
     parser.add_argument('--print-freq', '-p', default=10, type=int,
                         metavar='N', help='print frequency (default: 10)')
-    parser.add_argument('--resume', default='', type=str, metavar='PATH',
+    parser.add_argument('--resume', default='epoch_4_checkpoint.pth.tar', type=str, metavar='PATH',
                         help='path to latest checkpoint (default: none)')
     
-    if len(sys.argv) == 1:
-        parser.print_help()
-        sys.exit(1)
+    # if len(sys.argv) == 1:
+    #     parser.print_help()
+    #     sys.exit(1)
 
     args = parser.parse_args()
     return args
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     global args
     args = parse_args()
     args.proposal = '../data/vrd/proposal.pkl'
-    args.resume = '../models/%s/epoch_%d_checkpoint.pth.tar'%(args.name, args.epochs-1)
+    args.resume = '../models/epoch_%d_checkpoint.pth.tar'%(args.epochs-1)
     print args
     print 'Evaluating...'
     # Data
@@ -74,7 +74,8 @@ if __name__ == '__main__':
         net.load_state_dict(checkpoint['state_dict'])
         headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS", "Rel R@50", "ZS", "R@100", "ZS"]
         res = []
-        res.append((args.epochs-1,) + test_pre_net(net, args)+test_rel_net(net, args))
-        print tabulate(res, headers)
+        #res.append((args.epochs-1,) + test_pre_net(net, args)+test_rel_net(net, args))
+        #print tabulate(res, headers)
+        test_rel_net(net, args)
     else:
         print "=> no model found at '{}'".format(args.resume)

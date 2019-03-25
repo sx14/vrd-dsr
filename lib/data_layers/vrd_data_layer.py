@@ -107,15 +107,19 @@ class VrdDataLayer(object):
                 self._cur = 0
             return None
         im_path = anno_img['img_path']
+        if im_path[-3:] == 'png':
+            im_path = im_path[:-3]+'jpg'
+        print(im_path)
+
         im = cv2.imread(im_path)
-        ih = im.shape[0]    
+        ih = im.shape[0]
         iw = im.shape[1]
         PIXEL_MEANS = np.array([[[102.9801, 115.9465, 122.7717]]])
         image_blob, im_scale = prep_im_for_blob(im, PIXEL_MEANS)
         blob = np.zeros((1,)+image_blob.shape, dtype=np.float32)
-        blob[0] = image_blob        
+        blob[0] = image_blob
         # Reshape net's input blobs
-        boxes = np.zeros((anno_img['boxes'].shape[0], 5))        
+        boxes = np.zeros((anno_img['boxes'].shape[0], 5))
         boxes[:, 1:5] = anno_img['boxes'] * im_scale
         classes = np.array(anno_img['classes'])
         ix1 = np.array(anno_img['ix1'])
@@ -129,20 +133,20 @@ class VrdDataLayer(object):
         for ii in range(n_rel_inst):
             sBBox = anno_img['boxes'][ix1[ii]]
             oBBox = anno_img['boxes'][ix2[ii]]
-            rBBox = self._getUnionBBox(sBBox, oBBox, ih, iw)    
+            rBBox = self._getUnionBBox(sBBox, oBBox, ih, iw)
             soMask = [self._getDualMask(ih, iw, sBBox), \
-                      self._getDualMask(ih, iw, oBBox)]                        
+                      self._getDualMask(ih, iw, oBBox)]
             rel_boxes[ii, 1:5] = np.array(rBBox) * im_scale
             SpatialFea[ii] = soMask
             # SpatialFea[ii] = self._getRelativeLoc(sBBox, oBBox)
-            
+
         image_blob = image_blob.astype(np.float32, copy=False)
         boxes = boxes.astype(np.float32, copy=False)
-        classes = classes.astype(np.float32, copy=False) 
+        classes = classes.astype(np.float32, copy=False)
         self._cur += 1
         if(self._cur >= len(self._anno)):
-            self._cur = 0                
-        return blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, anno_img['boxes']        
+            self._cur = 0
+        return blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, anno_img['boxes']
 
     def forward_det(self):
         anno_img = self._anno[self._cur]
@@ -155,6 +159,11 @@ class VrdDataLayer(object):
                 self._cur = 0
             return None
         im_path = anno_img['img_path']
+
+        if im_path[-3:] == 'png':
+            im_path = im_path[:-3]+'jpg'
+        print(im_path)
+
         im = cv2.imread(im_path)
         ih = im.shape[0]    
         iw = im.shape[1]

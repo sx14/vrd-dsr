@@ -95,3 +95,7 @@ LOCK
 LOG*
 CURRENT
 MANIFEST-*
+
+*.pth
+*.tar
+*.jpg
