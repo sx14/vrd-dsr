@@ -124,7 +124,7 @@ def eval_reall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
         tp_num += img_tp
         num_pos_tuple += img_gt
     recall = (tp_num/num_pos_tuple)
-    print('rlt num: %d' % num_pos_tuple)
+    print('gt rlt num: %d' % num_pos_tuple)
     return recall*100        
 
 def eval_obj_img(gt_boxes, gt_cls, pred_boxes, pred_cls, gt_thr=0.5, return_flag = False):

@@ -77,6 +77,6 @@ if __name__ == '__main__':
         #res.append((args.epochs-1,) + test_pre_net(net, args)+test_rel_net(net, args))
         #print tabulate(res, headers)
         #test_rel_net(net, args)
-        test_pre_net(net, args)
+        test_rel_net(net, args)
     else:
         print "=> no model found at '{}'".format(args.resume)
