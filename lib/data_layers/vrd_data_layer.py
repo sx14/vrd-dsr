@@ -1,3 +1,5 @@
+# coding: utf-8
+
 import numpy as np
 import os.path as osp
 import scipy.io as sio
@@ -25,11 +27,15 @@ class VrdDataLayer(object):
         self._relations_to_ind = dict(zip(self._relations, xrange(self._num_relations)))        
         self._cur = 0
         self.cache_path = '../data/cache'
+
+        # 加载gt
         with open('../data/%s/%s.pkl'%(ds_name, stage), 'rb') as fid:
             anno = cPickle.load(fid)
-        if(self.stage == 'train'):          
+        if(self.stage == 'train'):
+            # GT，训练数据，清洗
             self._anno = [x for x in anno if x is not None and len(x['classes'])>1]
         else:
+            # 测试阶段，加载VRD detection
             self.proposals_path = proposals_path
             if(proposals_path != None):
                 with open(proposals_path, 'rb') as fid:   
@@ -37,22 +43,32 @@ class VrdDataLayer(object):
                     self._boxes = proposals['boxes']
                     self._pred_cls = proposals['cls']
                     self._pred_confs = proposals['confs']
+            # 测试阶段，直接加载，无清洗
             self._anno = anno
         self._num_instance = len(self._anno)
         self._batch_size = 1
+
+        # 加载sbj, obj先验
+        # P(pre|sbj, obj)
         with open('../data/%s/so_prior.pkl'%ds_name, 'rb') as fid:
             self._so_prior = cPickle.load(fid)  
 
     def forward(self):
         if(self.stage == 'train'):
+            # 训练
             return self.forward_train_rank_im()
         else:
+            # 测试
             if(self.proposals_path is None):
+                # TODO: 没有det的情况下是怎么做？
                 return self.forward_test()
             else:
+                # 成功加载detection后
                 if(self.model_type == 'LOC'):
+                    # TODO: 猜测这里加载的是object proposal（without class）
                     return self.forward_det_loc()
                 else:
+                    # 加载的是detection
                     return self.forward_det()
 
     def forward_train_rank_im(self):
@@ -150,40 +166,63 @@ class VrdDataLayer(object):
 
     def forward_det(self):
         anno_img = self._anno[self._cur]
+        # detection box
         boxes_img = self._boxes[self._cur]
+        # detection class
         pred_cls_img = self._pred_cls[self._cur]
+        # detection conf
         pred_confs_img = self._pred_confs[self._cur]        
         if(boxes_img.shape[0] < 2):
+            # 没有物体，或只有一个物体，无法构成relationship
+            # 跳过当前img
             self._cur += 1
             if(self._cur >= len(self._anno)):
+                # 数据指针到尽头，归零
                 self._cur = 0
             return None
         im_path = anno_img['img_path']
         print(im_path)
 
+        # by sunx
         if im_path[-3:] == 'png':
             im_path = im_path[:-3]+'jpg'
         print(im_path)
 
+        # 加载图片
         im = cv2.imread(im_path)
         ih = im.shape[0]    
         iw = im.shape[1]
+        # 三通道均值
         PIXEL_MEANS = np.array([[[102.9801, 115.9465, 122.7717]]])
+        # 图像归一化
+        # 图像resize
         image_blob, im_scale = prep_im_for_blob(im, PIXEL_MEANS)
         blob = np.zeros((1,)+image_blob.shape, dtype=np.float32)
         blob[0] = image_blob        
         # Reshape net's input blobs
+        # detection resize
         boxes = np.zeros((boxes_img.shape[0], 5))        
         boxes[:, 1:5] = boxes_img * im_scale
         classes = pred_cls_img
+        # sbj index
         ix1 = []
+        # obj index
         ix2 = []
+        # relationship 最大数量
         n_rel_inst = len(pred_cls_img)*(len(pred_cls_img)-1)
+
+        # relationship boxes(union box)
         rel_boxes = np.zeros((n_rel_inst, 5))
+
+        # 空间特征2
+        # 两通道 32*32，分别对应sbj和obj
         SpatialFea = np.zeros((n_rel_inst, 2, 32, 32))
         # SpatialFea = np.zeros((n_rel_inst, 8))
+        # relationship 先验概率
         rel_so_prior = np.zeros((n_rel_inst, self._num_relations))
         i_rel_inst = 0
+
+        # 全组合det, 产生relationship candidates
         for s_idx in range(len(pred_cls_img)):
             for o_idx in range(len(pred_cls_img)):
                 if(s_idx == o_idx):
@@ -193,15 +232,27 @@ class VrdDataLayer(object):
                 sBBox = boxes_img[s_idx]
                 oBBox = boxes_img[o_idx]
                 rBBox = self._getUnionBBox(sBBox, oBBox, ih, iw)
+
+                # [sbj, obj] 空间特征
                 soMask = [self._getDualMask(ih, iw, sBBox), \
-                      self._getDualMask(ih, iw, oBBox)]                        
+                      self._getDualMask(ih, iw, oBBox)]
+
+                # resize union box
                 rel_boxes[i_rel_inst, 1:5] = np.array(rBBox) * im_scale
                 SpatialFea[i_rel_inst] = soMask
                 # SpatialFea[i_rel_inst] = self._getRelativeLoc(sBBox, oBBox)
+
+                # 先验概率
                 rel_so_prior[i_rel_inst] = self._so_prior[classes[s_idx], classes[o_idx]]
                 i_rel_inst += 1
+
+        # img data
         image_blob = image_blob.astype(np.float32, copy=False)
+
+        # detection boxes
         boxes = boxes.astype(np.float32, copy=False)
+
+        # detection classes
         classes = classes.astype(np.float32, copy=False) 
         ix1 = np.array(ix1)
         ix2 = np.array(ix2)
