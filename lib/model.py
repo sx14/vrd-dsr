@@ -145,6 +145,8 @@ def test_rel_net(net, args):
     test_data_layer = VrdDataLayer(args.ds_name, 'test', model_type = args.model_type, proposals_path = args.proposal)
     predict = []
 
+    N_rlt_pred = 0
+
     # for step in range(1000):   
     for step in range(test_data_layer._num_instance):    
         test_data = test_data_layer.forward()
@@ -160,6 +162,7 @@ def test_rel_net(net, args):
         # 空间特征，detection classes, sbj-det-inds, obj-det,inds
         # det box(org), det confs, 先验
         image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, ori_bboxes, pred_confs, rel_so_prior = test_data
+        N_rlt_pred += ix1.shape[0]
 
         # 测试
         # 物体检测得分，predicate得分
@@ -244,4 +247,5 @@ def test_rel_net(net, args):
     print 'CLS REL TEST r50:%f, r50_zs:%f, r100:%f, r100_zs:%f'% (rec_50, rec_50_zs, rec_100, rec_100_zs)
     time2 = time.time()            
     print "TEST Time:%s" % (time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1))))
+    print('pred rlt num: %d' % N_rlt_pred)
     return rec_50, rec_50_zs, rec_100, rec_100_zs

@@ -98,7 +98,9 @@ def eval_reall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
             gt_path = '../data/%s/gt.pkl'%ds_name
         with open(gt_path, 'rb') as fid:
             gt = cPickle.load(fid)
-        
+
+    num_pre_tuple = 0
+
     pred = {}
     pred['tuple_label'] = copy.deepcopy(res['rlp_labels_ours'])
     pred['tuple_confs'] = copy.deepcopy(res['rlp_confs_ours'])
@@ -107,7 +109,10 @@ def eval_reall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
 
     for ii in range(num_imgs):
         if(pred['tuple_confs'][ii] is None):
-            continue        
+            continue
+
+        num_pre_tuple += pred['tuple_confs'][ii].shape[0]
+
         pred['tuple_confs'][ii] = np.array(pred['tuple_confs'][ii])
         if(pred['tuple_confs'][ii].shape[0] == 0):
             continue        
@@ -124,7 +129,8 @@ def eval_reall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
         tp_num += img_tp
         num_pos_tuple += img_gt
     recall = (tp_num/num_pos_tuple)
-    print('gt rlt num: %d' % num_pos_tuple)
+    print('gt  rlt num: %d' % num_pos_tuple)
+    print('pre rlt num: %d' % num_pre_tuple)
     return recall*100        
 
 def eval_obj_img(gt_boxes, gt_cls, pred_boxes, pred_cls, gt_thr=0.5, return_flag = False):
