@@ -6,7 +6,7 @@ import time
 import sys
 import os.path as osp
 this_dir = osp.dirname(osp.realpath(__file__))
-print this_dir
+
 
 def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
     gt_tupLabel = gt['tuple_label'][i].astype(np.float32)

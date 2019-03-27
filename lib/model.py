@@ -47,7 +47,7 @@ def test_pre_net(net, args):
     tuple_confs_cell = []
     sub_bboxes_cell  = []
     obj_bboxes_cell  = []
-    test_data_layer = VrdDataLayer(args.ds_name, 'test', model_type = args.model_type)
+    test_data_layer = VrdDataLayer(args.ds_name, 'test_gt', model_type = args.model_type)
     # for step in range(1000):
     for step in range(test_data_layer._num_instance):
         test_data = test_data_layer.forward()
@@ -75,23 +75,23 @@ def test_pre_net(net, args):
         obj_score, rel_score = net(image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, args)
         rel_prob = rel_score.data.cpu().numpy()
 
-        # rel_res = []
-        # for tuple_idx in range(rel_prob.shape[0]):
-        #     probs = rel_prob[tuple_idx]
-        #     rel = np.argmax(probs)
-        #     rel_res.append([tuple_idx, rel])
-        # rel_res = np.array(rel_res)
+        rel_res = []
+        for tuple_idx in range(rel_prob.shape[0]):
+            probs = rel_prob[tuple_idx]
+            rel = np.argmax(probs)
+            rel_res.append([tuple_idx, rel])
+        rel_res = np.array(rel_res)
 
-        # rlp_labels_im = rlp_labels_im[:rel_res.shape[0], :]
-        # sub_bboxes_im = sub_bboxes_im[:rel_res.shape[0], :]
-        # obj_bboxes_im = obj_bboxes_im[:rel_res.shape[0], :]
+        rlp_labels_im = rlp_labels_im[:rel_res.shape[0], :]
+        sub_bboxes_im = sub_bboxes_im[:rel_res.shape[0], :]
+        obj_bboxes_im = obj_bboxes_im[:rel_res.shape[0], :]
 
 
-        aaa = np.argsort(-rel_prob.ravel())
-        bbb = np.unravel_index(aaa, rel_prob.shape)
-        ccc = np.dstack(bbb)
-        ddd = ccc[0]
-        rel_res = ddd[:100]
+        # aaa = np.argsort(-rel_prob.ravel())
+        # bbb = np.unravel_index(aaa, rel_prob.shape)
+        # ccc = np.dstack(bbb)
+        # ddd = ccc[0]
+        # rel_res = ddd[:100]
 
 
         # 这一句是填充50/100的

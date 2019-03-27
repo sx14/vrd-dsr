@@ -57,12 +57,13 @@ def parse_args():
 if __name__ == '__main__':
     global args
     args = parse_args()
-    args.proposal = '../data/vrd/proposal.pkl'
+    # args.proposal = '../data/vrd/proposal.pkl'
+    args.proposal = '../data/vrd/proposal_nms.pkl'
     args.resume = '../models/epoch_%d_checkpoint.pth.tar'%(args.epochs-1)
     print args
     print 'Evaluating...'
     # Data
-    test_data_layer = VrdDataLayer(args.ds_name, 'test', model_type = args.model_type)
+    test_data_layer = VrdDataLayer(args.ds_name, 'test_gt', model_type = args.model_type)
     args.num_relations = test_data_layer._num_relations
     args.num_classes = test_data_layer._num_classes
     # Model
@@ -77,6 +78,6 @@ if __name__ == '__main__':
         #res.append((args.epochs-1,) + test_pre_net(net, args)+test_rel_net(net, args))
         #print tabulate(res, headers)
         #test_rel_net(net, args)
-        test_rel_net(net, args)
+        test_pre_net(net, args)
     else:
         print "=> no model found at '{}'".format(args.resume)
