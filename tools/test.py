@@ -13,7 +13,7 @@ import _init_paths
 from lib.nets.Vrd_Model import Vrd_Model
 import lib.network as network
 from lib.data_layers.vrd_data_layer import VrdDataLayer
-from lib.model import test_pre_net, test_rel_net
+from lib.model import test_pre_net, test_rel_net, test_rel_net_hier
 
 def parse_args():
     """
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     global args
     args = parse_args()
     # args.proposal = '../data/vrd/proposal.pkl'
-    args.proposal = '../data/vrd/proposal_nms.pkl'
+    args.proposal = '../data/vrd/proposal_fast.pkl'
     args.resume = '../models/epoch_%d_checkpoint.pth.tar'%(args.epochs-1)
     print args
     print 'Evaluating...'
@@ -77,7 +77,7 @@ if __name__ == '__main__':
         res = []
         #res.append((args.epochs-1,) + test_pre_net(net, args)+test_rel_net(net, args))
         #print tabulate(res, headers)
-        #test_rel_net(net, args)
-        test_pre_net(net, args)
+        test_rel_net_hier(net, args)
+        # test_pre_net(net, args)
     else:
         print "=> no model found at '{}'".format(args.resume)
