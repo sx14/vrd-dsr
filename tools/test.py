@@ -13,7 +13,7 @@ import _init_paths
 from lib.nets.Vrd_Model import Vrd_Model
 import lib.network as network
 from lib.data_layers.vrd_data_layer import VrdDataLayer
-from lib.model import test_pre_net, test_rel_net, test_rel_net_hier
+from lib.model import test_pre_net, test_rel_net, test_rel_net_hier, test_rel_net_mul, test_pre_net_hier
 
 def parse_args():
     """
@@ -54,6 +54,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
 if __name__ == '__main__':
     global args
     args = parse_args()
@@ -77,7 +78,7 @@ if __name__ == '__main__':
         res = []
         #res.append((args.epochs-1,) + test_pre_net(net, args)+test_rel_net(net, args))
         #print tabulate(res, headers)
-        test_rel_net_hier(net, args)
+        test_rel_net_mul(net, args)
         # test_pre_net(net, args)
     else:
         print "=> no model found at '{}'".format(args.resume)

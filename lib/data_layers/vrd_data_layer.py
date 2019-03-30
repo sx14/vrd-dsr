@@ -181,12 +181,9 @@ class VrdDataLayer(object):
                 self._cur = 0
             return None
         im_path = anno_img['img_path']
-        print(im_path)
-
         # by sunx
         if im_path[-3:] == 'png':
             im_path = im_path[:-3]+'jpg'
-        print(im_path)
 
         # 加载图片
         im = cv2.imread(im_path)
