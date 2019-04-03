@@ -77,7 +77,7 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr=0.5, return_match=False):
     return tp.sum(), num_gt_tuple
 
 
-def eval_per_image_mul(i, gt, pred, use_rel, gt_thr=0.5, return_match=False):
+def eval_per_image_mul(i, gt, pred, use_rel, gt_thr=0.5, k=2):
     gt_tupLabel = gt['tuple_label'][i].astype(np.float32)
     num_gt_tuple = gt_tupLabel.shape[0]
     if (num_gt_tuple == 0 or pred['tuple_confs'][i] is None):
@@ -87,6 +87,8 @@ def eval_per_image_mul(i, gt, pred, use_rel, gt_thr=0.5, return_match=False):
     gt_objBox = gt['obj_bboxes'][i].astype(np.float32)
     gt_subBox = gt['sub_bboxes'][i].astype(np.float32)
     gt_counts = gt['pair_counts'][i].astype(np.float32)
+    if k == 1:
+        gt_counts[:, :] = 1
 
     gt_detected = np.zeros((num_gt_tuple, 1), np.float32)
     labels = pred['tuple_label'][i].astype(np.float32)
@@ -126,14 +128,14 @@ def eval_per_image_mul(i, gt, pred, use_rel, gt_thr=0.5, return_match=False):
                 # makes sure that this object is detected according
                 # to its individual threshold
                 if ov >= gt_thr:
-                    if labels[j, 0] == gt_tupLabel[k, 0] and labels[j, 2] == gt_tupLabel[k, 2]:
-                        gt_counts[0, k] -= 1
+                    # if labels[j, 0] == gt_tupLabel[k, 0] and labels[j, 2] == gt_tupLabel[k, 2]:
+                    gt_counts[0, k] -= 1
                     if np.linalg.norm(labels[j, :] - gt_tupLabel[k, :], 2) == 0:
                         gt_detected[k] = 1
 
     return gt_detected.sum(), num_gt_tuple
 
-def eval_per_image_hier(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
+def eval_per_image_hier(i, gt, pred, use_rel, gt_thr = 0.5):
 
     obj_raw_inds = objnet.get_raw_indexes() # 0 is back
     pre_raw_inds = prenet.get_raw_indexes() # 0 is back
@@ -223,7 +225,7 @@ def eval_per_image_hier(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False
 
     return gt_detected.sum(), num_gt_tuple
 
-def eval_per_image_hier_mul(i, gt, pred, use_rel, gt_thr=0.5, return_match=False):
+def eval_per_image_hier_mul(i, gt, pred, use_rel, gt_thr=0.5, k=1):
     obj_raw_inds = objnet.get_raw_indexes()  # 0 is bg
     pre_raw_inds = prenet.get_raw_indexes()  # 0 is bg
 
@@ -236,6 +238,8 @@ def eval_per_image_hier_mul(i, gt, pred, use_rel, gt_thr=0.5, return_match=False
     gt_objBox = gt['obj_bboxes'][i].astype(np.float32)
     gt_subBox = gt['sub_bboxes'][i].astype(np.float32)
     gt_counts = gt['pair_counts'][i].astype(np.float32)
+    if k == 1:
+        gt_counts[:, :] = 1
 
     gt_detected = np.zeros((num_gt_tuple, 1), np.float32)
     labels = pred['tuple_label'][i].astype(np.float32)
@@ -307,8 +311,8 @@ def eval_per_image_hier_mul(i, gt, pred, use_rel, gt_thr=0.5, return_match=False
                     obj_scr = gt_obj_node.score(pred_obj_hier_ind)
                     rlt_scr = min([sbj_scr, obj_scr, pre_scr])
 
-                    if obj_scr > 0 and sbj_scr > 0:
-                        gt_counts[0, k] -= 1
+                    # if obj_scr > 0 and sbj_scr > 0:
+                    gt_counts[0, k] -= 1
 
                     if rlt_scr == 0:
                         continue;
@@ -379,7 +383,69 @@ def eval_reall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
     print('pre rlt num: %d' % num_pre_tuple)
     return recall*100        
 
-def eval_reall_at_N_mul(ds_name, N, res, use_rel = True, use_zero_shot = False):
+def eval_reall_at_N_mul(ds_name, N, res, use_rel = True, use_zero_shot = False, k=0):
+    if(ds_name == 'vrd'):
+        num_imgs = 1000
+        gt = sio.loadmat('../data/vrd/gt1.mat')
+        gt['tuple_label'] = gt['gt_tuple_label'][0]
+        gt['obj_bboxes'] = gt['gt_obj_bboxes'][0]
+        gt['sub_bboxes'] = gt['gt_sub_bboxes'][0]
+        gt['pair_counts'] = gt['gt_counts'][0]
+
+        if(use_zero_shot):
+            zs = sio.loadmat('../data/vrd/zeroShot.mat')['zeroShot'][0];
+            for ii in range(num_imgs):
+                if(zs[ii].shape[0] == 0):
+                    continue
+                idx = zs[ii] == 1
+                gt['tuple_label'][ii] = gt['tuple_label'][ii][idx[0]]
+                gt['obj_bboxes'][ii] = gt['obj_bboxes'][ii][idx[0]]
+                gt['sub_bboxes'][ii] = gt['sub_bboxes'][ii][idx[0]]
+    else:
+        # Testing all images is quite slow.
+        num_imgs = 8995
+        if(use_zero_shot):
+            gt_path = '../data/%s/zs_gt.pkl'%ds_name
+        else:
+            gt_path = '../data/%s/gt.pkl'%ds_name
+        with open(gt_path, 'rb') as fid:
+            gt = cPickle.load(fid)
+
+    num_pre_tuple = 0
+
+    pred = {}
+    pred['tuple_label'] = copy.deepcopy(res['rlp_labels_ours'])
+    pred['tuple_confs'] = copy.deepcopy(res['rlp_confs_ours'])
+    pred['sub_bboxes']  = copy.deepcopy(res['sub_bboxes_ours'])
+    pred['obj_bboxes']  = copy.deepcopy(res['obj_bboxes_ours'])
+
+    for ii in range(num_imgs):
+        if(pred['tuple_confs'][ii] is None):
+            continue
+
+        num_pre_tuple += pred['tuple_confs'][ii].shape[0]
+
+        pred['tuple_confs'][ii] = np.array(pred['tuple_confs'][ii])
+        if(pred['tuple_confs'][ii].shape[0] == 0):
+            continue
+        idx_order = np.array(pred['tuple_confs'][ii]).argsort()[::-1][:N]
+        pred['tuple_label'][ii] = pred['tuple_label'][ii][idx_order,:]
+        pred['tuple_confs'][ii] = pred['tuple_confs'][ii][idx_order]
+        pred['sub_bboxes'][ii]  = pred['sub_bboxes'][ii][idx_order,:]
+        pred['obj_bboxes'][ii]  = pred['obj_bboxes'][ii][idx_order,:]
+    # from IPython import embed; embed()
+    tp_num = 0
+    num_pos_tuple = 0
+    for i in range(num_imgs):
+        img_tp, img_gt = eval_per_image_mul(i, gt, pred, use_rel, gt_thr = 0.5, k=3)
+        tp_num += img_tp
+        num_pos_tuple += img_gt
+    recall = (tp_num/num_pos_tuple)
+    print('gt  rlt num: %d' % num_pos_tuple)
+    print('pre rlt num: %d' % num_pre_tuple)
+    return recall*100
+
+def eval_reall_at_N_hier(ds_name, N, res, use_rel = True, use_zero_shot = False):
     if(ds_name == 'vrd'):
         num_imgs = 1000
         gt = sio.loadmat('../data/vrd/gt1.mat')
@@ -432,67 +498,7 @@ def eval_reall_at_N_mul(ds_name, N, res, use_rel = True, use_zero_shot = False):
     tp_num = 0
     num_pos_tuple = 0
     for i in range(num_imgs):
-        img_tp, img_gt = eval_per_image_hier_mul(i, gt, pred, use_rel, gt_thr = 0.5)
-        tp_num += img_tp
-        num_pos_tuple += img_gt
-    recall = (tp_num/num_pos_tuple)
-    print('gt  rlt num: %d' % num_pos_tuple)
-    print('pre rlt num: %d' % num_pre_tuple)
-    return recall*100
-
-def eval_reall_at_N_hier(ds_name, N, res, use_rel = True, use_zero_shot = False):
-    if(ds_name == 'vrd'):
-        num_imgs = 1000
-        gt = sio.loadmat('../data/vrd/gt.mat')
-        gt['tuple_label'] = gt['gt_tuple_label'][0]
-        gt['obj_bboxes'] = gt['gt_obj_bboxes'][0]
-        gt['sub_bboxes'] = gt['gt_sub_bboxes'][0]
-        if(use_zero_shot):
-            zs = sio.loadmat('../data/vrd/zeroShot.mat')['zeroShot'][0];
-            for ii in range(num_imgs):
-                if(zs[ii].shape[0] == 0):
-                    continue
-                idx = zs[ii] == 1
-                gt['tuple_label'][ii] = gt['tuple_label'][ii][idx[0]]
-                gt['obj_bboxes'][ii] = gt['obj_bboxes'][ii][idx[0]]
-                gt['sub_bboxes'][ii] = gt['sub_bboxes'][ii][idx[0]]
-    else:
-        # Testing all images is quite slow.
-        num_imgs = 8995
-        if(use_zero_shot):
-            gt_path = '../data/%s/zs_gt.pkl'%ds_name
-        else:
-            gt_path = '../data/%s/gt.pkl'%ds_name
-        with open(gt_path, 'rb') as fid:
-            gt = cPickle.load(fid)
-
-    num_pre_tuple = 0
-
-    pred = {}
-    pred['tuple_label'] = copy.deepcopy(res['rlp_labels_ours'])
-    pred['tuple_confs'] = copy.deepcopy(res['rlp_confs_ours'])
-    pred['sub_bboxes']  = copy.deepcopy(res['sub_bboxes_ours'])
-    pred['obj_bboxes']  = copy.deepcopy(res['obj_bboxes_ours'])
-
-    for ii in range(num_imgs):
-        if(pred['tuple_confs'][ii] is None):
-            continue
-
-        num_pre_tuple += pred['tuple_confs'][ii].shape[0]
-
-        pred['tuple_confs'][ii] = np.array(pred['tuple_confs'][ii])
-        if(pred['tuple_confs'][ii].shape[0] == 0):
-            continue
-        idx_order = np.array(pred['tuple_confs'][ii]).argsort()[::-1][:N]
-        pred['tuple_label'][ii] = pred['tuple_label'][ii][idx_order,:]
-        pred['tuple_confs'][ii] = pred['tuple_confs'][ii][idx_order]
-        pred['sub_bboxes'][ii]  = pred['sub_bboxes'][ii][idx_order,:]
-        pred['obj_bboxes'][ii]  = pred['obj_bboxes'][ii][idx_order,:]
-    # from IPython import embed; embed()
-    tp_num = 0
-    num_pos_tuple = 0
-    for i in range(num_imgs):
-        img_tp, img_gt = eval_per_image_hier(i, gt, pred, use_rel, gt_thr = 0.5)
+        img_tp, img_gt = eval_per_image_hier_mul(i, gt, pred, use_rel, gt_thr = 0.5, k=2)
         tp_num += img_tp
         num_pos_tuple += img_gt
     recall = (tp_num/num_pos_tuple)

@@ -75,16 +75,18 @@ def test_pre_net(net, args):
         obj_score, rel_score = net(image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, args)
         rel_prob = rel_score.data.cpu().numpy()
 
-        rel_res = []
-        for tuple_idx in range(rel_prob.shape[0]):
-            probs = rel_prob[tuple_idx]
-            rel = np.argmax(probs)
-            rel_res.append([tuple_idx, rel])
-        rel_res = np.array(rel_res)
+        # ---- k=1 ----
+        # rel_res = []
+        # for tuple_idx in range(rel_prob.shape[0]):
+        #     probs = rel_prob[tuple_idx]
+        #     rel = np.argmax(probs)
+        #     rel_res.append([tuple_idx, rel])
+        # rel_res = np.array(rel_res)
 
-        rlp_labels_im = rlp_labels_im[:rel_res.shape[0], :]
-        sub_bboxes_im = sub_bboxes_im[:rel_res.shape[0], :]
-        obj_bboxes_im = obj_bboxes_im[:rel_res.shape[0], :]
+        # rlp_labels_im = rlp_labels_im[:rel_res.shape[0], :]
+        # sub_bboxes_im = sub_bboxes_im[:rel_res.shape[0], :]
+        # obj_bboxes_im = obj_bboxes_im[:rel_res.shape[0], :]
+        # ---- k=1 ----
 
 
         # aaa = np.argsort(-rel_prob.ravel())
@@ -95,7 +97,7 @@ def test_pre_net(net, args):
 
 
         # 这一句是填充50/100的
-        # rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:100]
+        rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:100]
         for ii in range(rel_res.shape[0]):
             rel = rel_res[ii, 1]
             tuple_idx = rel_res[ii, 0]
@@ -115,6 +117,10 @@ def test_pre_net(net, args):
     res['rlp_confs_ours'] = tuple_confs_cell
     res['sub_bboxes_ours'] = sub_bboxes_cell
     res['obj_bboxes_ours'] = obj_bboxes_cell
+
+    with open('test_pre.bin', 'wb') as f:
+        cPickle.dump(res, f)
+
     rec_50  = eval_reall_at_N(args.ds_name, 50, res, use_zero_shot = False)
     rec_50_zs  = eval_reall_at_N(args.ds_name, 50, res, use_zero_shot = True)
     rec_100 = eval_reall_at_N(args.ds_name, 100, res, use_zero_shot = False)
@@ -507,6 +513,9 @@ def test_rel_net_mul(net, args):
     res['sub_bboxes_ours'] = sub_bboxes_cell
     res['obj_bboxes_ours'] = obj_bboxes_cell
 
+    with open('test_rela.bin', 'wb') as f:
+        cPickle.dump(res, f)
+
 
     rec_50  = eval_reall_at_N_mul(args.ds_name, 50, res, use_zero_shot = False)
     rec_50_zs  = eval_reall_at_N_mul(args.ds_name, 50, res, use_zero_shot = True)
@@ -543,6 +552,7 @@ def test_rel_net_hier(net, args):
 
     # for step in range(1000):
     for step in range(test_data_layer._num_instance):
+        print(step)
         test_data = test_data_layer.forward()
         if(test_data is None):
             rlp_labels_ours.append(None)
@@ -588,61 +598,63 @@ def test_rel_net_hier(net, args):
         # TODO:先验得分怎么算
         rel_prob += np.log(0.5*(rel_so_prior+1.0/args.num_relations))
 
+
+
+        # ---- k=1 ----
+        # rlp_labels_im  = np.zeros((rel_prob.shape[0], 3), dtype = np.float)
+        # tuple_confs_im = []
+        # sub_bboxes_im  = np.zeros((rel_prob.shape[0], 4), dtype = np.float)
+        # obj_bboxes_im  = np.zeros((rel_prob.shape[0], 4), dtype = np.float)
+        # n_idx = 0
+        # for tuple_idx in range(rel_prob.shape[0]):
+        #     sub = classes[ix1[tuple_idx]]
+        #     obj = classes[ix2[tuple_idx]]
+        #
+        #
+        #     rel_p = rel_prob[tuple_idx]
+        #     rel = np.argmax(rel_p)
+        #
+        #     if (pred_confs.ndim == 1):
+        #         conf = np.log(pred_confs[ix1[tuple_idx]]) + np.log(pred_confs[ix2[tuple_idx]]) + rel_prob[tuple_idx, rel]
+        #     else:
+        #         conf = np.log(pred_confs[ix1[tuple_idx], 0]) + np.log(pred_confs[ix2[tuple_idx], 0]) + rel_prob[tuple_idx, rel]
+        #     sub_bboxes_im[n_idx] = ori_bboxes[ix1[tuple_idx]]
+        #     obj_bboxes_im[n_idx] = ori_bboxes[ix2[tuple_idx]]
+        #     rlp_labels_im[n_idx] = [sub, rel, obj]
+        #     tuple_confs_im.append(conf)
+        #     n_idx += 1
+        # ---- k=1 ----
+
+        # ---- k=70 ----
         # 预测relationship的三元组，n*(n-1)*70组
-        rlp_labels_im  = np.zeros((rel_prob.shape[0], 3), dtype = np.float)
+        rlp_labels_im = np.zeros((rel_prob.shape[0] * rel_prob.shape[1], 3), dtype=np.float)
         tuple_confs_im = []
-        sub_bboxes_im  = np.zeros((rel_prob.shape[0], 4), dtype = np.float)
-        obj_bboxes_im  = np.zeros((rel_prob.shape[0], 4), dtype = np.float)
+        sub_bboxes_im = np.zeros((rel_prob.shape[0] * rel_prob.shape[1], 4), dtype=np.float)
+        obj_bboxes_im = np.zeros((rel_prob.shape[0] * rel_prob.shape[1], 4), dtype=np.float)
         n_idx = 0
 
         for tuple_idx in range(rel_prob.shape[0]):
             sub = classes[ix1[tuple_idx]]
             obj = classes[ix2[tuple_idx]]
-
-            # ---- k=1 ----
-            rel_p = rel_prob[tuple_idx]
-            rel = np.argmax(rel_p)
-
-            if (pred_confs.ndim == 1):
-                conf = np.log(pred_confs[ix1[tuple_idx]]) + np.log(pred_confs[ix2[tuple_idx]]) + rel_prob[tuple_idx, rel]
-            else:
-                conf = np.log(pred_confs[ix1[tuple_idx], 0]) + np.log(pred_confs[ix2[tuple_idx], 0]) + rel_prob[tuple_idx, rel]
-            sub_bboxes_im[n_idx] = ori_bboxes[ix1[tuple_idx]]
-            obj_bboxes_im[n_idx] = ori_bboxes[ix2[tuple_idx]]
-            rlp_labels_im[n_idx] = [sub, rel, obj]
-            tuple_confs_im.append(conf)
-            n_idx += 1
-            # ---- k=1 ----
-
-        # ---- k=70 ----
-        # rlp_labels_im = np.zeros((rel_prob.shape[0] * rel_prob.shape[1], 3), dtype=np.float)
-        # tuple_confs_im = []
-        # sub_bboxes_im = np.zeros((rel_prob.shape[0] * rel_prob.shape[1], 4), dtype=np.float)
-        # obj_bboxes_im = np.zeros((rel_prob.shape[0] * rel_prob.shape[1], 4), dtype=np.float)
-        # n_idx = 0
-        #
-        # for tuple_idx in range(rel_prob.shape[0]):
-        #     sub = classes[ix1[tuple_idx]]
-        #     obj = classes[ix2[tuple_idx]]
-        #     for rel in range(rel_prob.shape[1]):
-        #         if (args.use_obj_prior):
-        #             # 使用物体得分
-        #             # relationship 得分为sbj,obj,pre得分之和，即均值
-        #             if (pred_confs.ndim == 1):
-        #                 conf = np.log(pred_confs[ix1[tuple_idx]]) + np.log(pred_confs[ix2[tuple_idx]]) + rel_prob[
-        #                     tuple_idx, rel]
-        #             else:
-        #                 conf = np.log(pred_confs[ix1[tuple_idx], 0]) + np.log(pred_confs[ix2[tuple_idx], 0]) + rel_prob[
-        #                     tuple_idx, rel]
-        #         else:
-        #             # 不使用物体得分
-        #             # relationship得分就是predicate得分
-        #             conf = rel_prob[tuple_idx, rel]
-        #         sub_bboxes_im[n_idx] = ori_bboxes[ix1[tuple_idx]]
-        #         obj_bboxes_im[n_idx] = ori_bboxes[ix2[tuple_idx]]
-        #         rlp_labels_im[n_idx] = [sub, rel, obj]
-        #         tuple_confs_im.append(conf)
-        #         n_idx += 1
+            for rel in range(rel_prob.shape[1]):
+                if (args.use_obj_prior):
+                    # 使用物体得分
+                    # relationship 得分为sbj,obj,pre得分之和，即均值
+                    if (pred_confs.ndim == 1):
+                        conf = np.log(pred_confs[ix1[tuple_idx]]) + np.log(pred_confs[ix2[tuple_idx]]) + rel_prob[
+                            tuple_idx, rel]
+                    else:
+                        conf = np.log(pred_confs[ix1[tuple_idx], 0]) + np.log(pred_confs[ix2[tuple_idx], 0]) + rel_prob[
+                            tuple_idx, rel]
+                else:
+                    # 不使用物体得分
+                    # relationship得分就是predicate得分
+                    conf = rel_prob[tuple_idx, rel]
+                sub_bboxes_im[n_idx] = ori_bboxes[ix1[tuple_idx]]
+                obj_bboxes_im[n_idx] = ori_bboxes[ix2[tuple_idx]]
+                rlp_labels_im[n_idx] = [sub, rel, obj]
+                tuple_confs_im.append(conf)
+                n_idx += 1
         # ---- k=70 ----
 
         if(args.ds_name =='vrd'):
