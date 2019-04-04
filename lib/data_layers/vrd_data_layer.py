@@ -125,7 +125,6 @@ class VrdDataLayer(object):
         im_path = anno_img['img_path']
         if im_path[-3:] == 'png':
             im_path = im_path[:-3]+'jpg'
-        print(im_path)
 
         im = cv2.imread(im_path)
         ih = im.shape[0]

@@ -47,9 +47,11 @@ def test_pre_net(net, args):
     tuple_confs_cell = []
     sub_bboxes_cell  = []
     obj_bboxes_cell  = []
-    test_data_layer = VrdDataLayer(args.ds_name, 'test_gt', model_type = args.model_type)
+    test_data_layer = VrdDataLayer(args.ds_name, 'test', model_type = args.model_type)
     # for step in range(1000):
     for step in range(test_data_layer._num_instance):
+        if step % 100 == 0:
+            print(step)
         test_data = test_data_layer.forward()
         if(test_data is None):
             rlp_labels_ours.append(None)

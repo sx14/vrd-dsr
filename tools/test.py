@@ -25,7 +25,7 @@ def parse_args():
                         default=None, type=str)
     parser.add_argument('--dataset', dest='ds_name',
                         help='dataset name',
-                        default='vrd', type=str)
+                        default='vg', type=str)
     parser.add_argument('--model_type', dest='model_type',
                         help='model type: RANK_IM_ALL, RANK_IM, LOC',
                         default='RANK_IM', type=str)
@@ -36,7 +36,7 @@ def parse_args():
     parser.add_argument('--no_obj_prior', dest='use_obj_prior', action='store_false')
     parser.set_defaults(use_obj_prior=True)        
     parser.add_argument('--loc_type', default=0, type=int)
-    parser.add_argument('--epochs', default=5, type=int, metavar='N',
+    parser.add_argument('--epochs', default=6, type=int, metavar='N',
                         help='number of total epochs to run')
     parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                         help='manual epoch number (useful on restarts)')
@@ -59,13 +59,11 @@ if __name__ == '__main__':
     global args
     args = parse_args()
     args.proposal = '../data/%s/proposal.pkl' % args.ds_name
-    # args.proposal = '../data/vrd/proposal_fast.pkl'
-    args.resume = '../models/%s/epoch_%d_checkpoint.pth.tar'%(args.ds_name, args.epochs-1)
     args.k = 1
     print args
     print 'Evaluating...'
     # Data
-    test_data_layer = VrdDataLayer(args.ds_name, 'test_gt', model_type = args.model_type)
+    test_data_layer = VrdDataLayer(args.ds_name, 'test', model_type = args.model_type)
     args.num_relations = test_data_layer._num_relations
     args.num_classes = test_data_layer._num_classes
     # Model
@@ -79,7 +77,7 @@ if __name__ == '__main__':
         res = []
         #res.append((args.epochs-1,) + test_pre_net(net, args)+test_rel_net(net, args))
         #print tabulate(res, headers)
-        test_rel_net_mul(net, args)
+        ##test_rel_net_mul(net, args)
         test_pre_net(net, args)
     else:
         print "=> no model found at '{}'".format(args.resume)

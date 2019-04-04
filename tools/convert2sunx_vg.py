@@ -1,9 +1,10 @@
+import cPickle
 import pickle
 import scipy.io
 import numpy as np
 
-dataset = 'vrd'
-target = 'rela'
+dataset = 'vg'
+target = 'pre'
 
 if dataset == 'vrd':
     from lib.label_hier.vrd.pre_hier import prenet
@@ -20,22 +21,30 @@ pred_obj_boxes = pred['obj_bboxes_ours']
 pred_sbj_boxes = pred['sub_bboxes_ours']
 
 
-img_paths_mat = scipy.io.loadmat('imagePath.mat')
-img_paths = img_paths_mat['imagePath'][0]
+gt_path = '../data/vg/test.pkl'
+with open(gt_path, 'rb') as f:
+    gt = cPickle.load(f)
+
+img_ids = []
+for i in range(len(gt)):
+    img_anno = gt[i]
+    img_path = img_anno['img_path']
+    img_id = img_path.split('/')[-1].split('.')[0]
+    img_ids.append(img_id)
 
 pred_roidb = {}
 
-
+# object 1 base
+# prdicate 0 base
 raw_obj_labels = objnet.get_raw_labels()
-raw_pre_labels = prenet.get_raw_labels()
-for i in range(1000):
+raw_pre_labels = prenet.get_raw_labels()[1:]
+for i in range(len(img_ids)):
 
     if pred_sbj_boxes[i] is None or \
             pred_sbj_boxes[i].shape[0] != pred_rlt_confs[i].shape[0]:
         continue
 
-    img_path = img_paths[i][0]
-    img_id = img_path.split('.')[0]
+    img_id = img_ids[i]
 
     sbj_boxes = pred_sbj_boxes[i].astype(np.int)
     obj_boxes = pred_obj_boxes[i].astype(np.int)
