@@ -2,13 +2,11 @@ import scipy.io as sio
 import numpy as np
 import cPickle
 import copy
-import time
-import sys
 import os.path as osp
 this_dir = osp.dirname(osp.realpath(__file__))
 
-from label_hier.obj_hier import objnet
-from label_hier.pre_hier import prenet
+from lib.label_hier.vrd.obj_hier import objnet
+from lib.label_hier.vrd.pre_hier import prenet
 
 
 def eval_per_image(i, gt, pred, use_rel, gt_thr=0.5, return_match=False):

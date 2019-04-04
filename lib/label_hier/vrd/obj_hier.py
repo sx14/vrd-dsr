@@ -1,8 +1,8 @@
 import os
 import pickle
 from nltk.corpus import wordnet as wn
-from label_hier import LabelHier
-from label_hier import LabelNode
+from lib.label_hier.label_hier import LabelHier
+from lib.label_hier.label_hier import LabelNode
 from global_config import PROJECT_ROOT
 
 

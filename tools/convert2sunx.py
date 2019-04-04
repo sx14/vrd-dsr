@@ -2,11 +2,15 @@ import pickle
 import scipy.io
 import numpy as np
 
-from lib.label_hier.pre_hier import prenet
-from lib.label_hier.obj_hier import objnet
-
 dataset = 'vrd'
 target = 'rela'
+
+if dataset == 'vrd':
+    from lib.label_hier.vrd.pre_hier import prenet
+    from lib.label_hier.vrd.obj_hier import objnet
+else:
+    from lib.label_hier.vg.pre_hier import prenet
+    from lib.label_hier.vg.obj_hier import objnet
 
 with open('test_%s_%s.bin' % (target, dataset), 'rb') as f:
     pred = pickle.load(f)

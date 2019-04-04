@@ -1,6 +1,6 @@
 import os
-from label_hier import LabelHier
-from label_hier import LabelNode
+from lib.label_hier.label_hier import LabelHier
+from lib.label_hier.label_hier import LabelNode
 
 from global_config import PROJECT_ROOT, VRD_ROOT
 
