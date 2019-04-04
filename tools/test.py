@@ -58,9 +58,9 @@ def parse_args():
 if __name__ == '__main__':
     global args
     args = parse_args()
-    args.proposal = '../data/vrd/proposal.pkl'
+    args.proposal = '../data/%s/proposal.pkl' % args.ds_name
     # args.proposal = '../data/vrd/proposal_fast.pkl'
-    args.resume = '../models/epoch_%d_checkpoint.pth.tar'%(args.epochs-1)
+    args.resume = '../models/%s/epoch_%d_checkpoint.pth.tar'%(args.ds_name, args.epochs-1)
     args.k = 1
     print args
     print 'Evaluating...'
@@ -79,7 +79,7 @@ if __name__ == '__main__':
         res = []
         #res.append((args.epochs-1,) + test_pre_net(net, args)+test_rel_net(net, args))
         #print tabulate(res, headers)
-        #test_rel_net_mul(net, args)
+        test_rel_net_mul(net, args)
         test_pre_net(net, args)
     else:
         print "=> no model found at '{}'".format(args.resume)

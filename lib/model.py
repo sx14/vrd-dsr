@@ -118,7 +118,7 @@ def test_pre_net(net, args):
     res['sub_bboxes_ours'] = sub_bboxes_cell
     res['obj_bboxes_ours'] = obj_bboxes_cell
 
-    with open('test_pre.bin', 'wb') as f:
+    with open('test_pre_%s.bin' % args.ds_name, 'wb') as f:
         cPickle.dump(res, f)
 
     rec_50  = eval_reall_at_N(args.ds_name, 50, res, use_zero_shot = False)
@@ -513,7 +513,7 @@ def test_rel_net_mul(net, args):
     res['sub_bboxes_ours'] = sub_bboxes_cell
     res['obj_bboxes_ours'] = obj_bboxes_cell
 
-    with open('test_rela.bin', 'wb') as f:
+    with open('test_rela_%s.bin' % args.ds_name, 'wb') as f:
         cPickle.dump(res, f)
 
 

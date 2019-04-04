@@ -5,7 +5,10 @@ import numpy as np
 from lib.label_hier.pre_hier import prenet
 from lib.label_hier.obj_hier import objnet
 
-with open('test_rela.bin', 'rb') as f:
+dataset = 'vrd'
+target = 'rela'
+
+with open('test_%s_%s.bin' % (target, dataset), 'rb') as f:
     pred = pickle.load(f)
 pred_rlt_labels = pred['rlp_labels_ours']
 pred_rlt_confs = pred['rlp_confs_ours']
@@ -75,6 +78,6 @@ for i in range(1000):
                                 pred_confs), axis=1)
     pred_roidb[img_id] = pred_rois
 
-save_path = 'pre_box_label_vrd_dsr.bin'
+save_path = '%s_box_label_%s_dsr.bin' % (target, dataset)
 with open(save_path, 'wb') as f:
     pickle.dump(pred_roidb, f)
