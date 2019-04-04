@@ -397,7 +397,8 @@ def test_rel_net_mul(net, args):
 
     # for step in range(1000):
     for step in range(test_data_layer._num_instance):
-        print(step)
+        if step % 100 == 0:
+            print(step)
         test_data = test_data_layer.forward()
         if(test_data is None):
             rlp_labels_ours.append(None)
